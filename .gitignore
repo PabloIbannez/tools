@@ -1,0 +1,19 @@
+
+# Ignore all
+*
+
+# Unignore all with extensions
+!*.*
+!Makefile
+# Unignore all dirs
+!*/
+
+
+*.so
+*.dat
+run.*
+*.o
+a.out
+*~
+
+
