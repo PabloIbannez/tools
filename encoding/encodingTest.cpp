@@ -1,4 +1,4 @@
-#include "encoding.hpp"
+#include "encoding.cuh"
 
 #include <iostream>
 

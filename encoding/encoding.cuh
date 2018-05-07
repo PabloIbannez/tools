@@ -22,6 +22,12 @@ printf("%u %u %u\n",x.get_st,x.get_nd,x.get_rd); // The different values are pri
 #include <cstdio>  //printf
 #include <cstdint>
 
+#ifdef __CUDACC__
+#define INLINE inline __host__ __device__
+#else
+#define INLINE inline
+#endif
+
 template<typename baseType, uint8_t st_l,uint8_t nd_l,uint8_t rd_l>
 class encoding3{
     
@@ -42,9 +48,9 @@ class encoding3{
 	encoding3(baseType base):base(base){}
 	encoding3(){encoding3(0);}
 	
-	inline baseType get_base(){return base;}
+	INLINE baseType get_base(){return base;}
 	
-	inline void set_st(baseType st){
+	INLINE void set_st(baseType st){
 	    if( st > baseType((1<<st_l)-1)){
 		std::printf("ERROR: The maximum size of the first encoded variable is: %u",(1<<st_l)-1);
 	    } else {
@@ -52,7 +58,7 @@ class encoding3{
 	    }
 	}
 	
-	inline void set_nd(baseType nd){
+	INLINE void set_nd(baseType nd){
 	    if( nd > baseType((1<<nd_l)-1)){
 		std::printf("ERROR: The maximum size of the second encoded variable is: %u",(1<<nd_l)-1);
 	    } else {
@@ -60,7 +66,7 @@ class encoding3{
 	    }
 	}
 	
-	inline void set_rd(baseType rd){
+	INLINE void set_rd(baseType rd){
 	    if( rd > baseType((1<<rd_l)-1)){
 		std::printf("ERROR: The maximum size of the third encoded variable is: %u",(1<<rd_l)-1);
 	    } else {
@@ -68,9 +74,9 @@ class encoding3{
 	    }
 	}
 	
-	inline baseType get_st(){return base >> (nd_l+rd_l);}
-	inline baseType get_nd(){return (base & mask_nd) >> rd_l;}
-	inline baseType get_rd(){return (base & mask_rd);}
+	INLINE baseType get_st(){return base >> (nd_l+rd_l);}
+	INLINE baseType get_nd(){return (base & mask_nd) >> rd_l;}
+	INLINE baseType get_rd(){return (base & mask_rd);}
 };
 
 
@@ -79,5 +85,7 @@ using encoding3_32 = encoding3<uint32_t,st_l,nd_l,rd_l>;
 
 template<uint8_t st_l,uint8_t nd_l,uint8_t rd_l>
 using encoding3_64 = encoding3<uint64_t,st_l,nd_l,rd_l>;
+
+#undef INLINE
 
 #endif
