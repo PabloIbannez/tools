@@ -19,12 +19,12 @@ printf("%u %u %u\n",x.get_st,x.get_nd,x.get_rd); // The different values are pri
 #ifndef __ENCODING__
 #define __ENCODING__
 
-#include <cstdio>  //printf
 #include <cstdint>
 
 #ifdef __CUDACC__
 #define INLINE inline __host__ __device__
 #else
+#include <cstdio>  //printf
 #define INLINE inline
 #endif
 
@@ -45,8 +45,8 @@ class encoding3{
     
     public:
     
-	encoding3(baseType base):base(base){}
-	encoding3(){encoding3(0);}
+	INLINE encoding3(baseType base):base(base){}
+	INLINE encoding3(){encoding3(0);}
 	
 	INLINE baseType get_base(){return base;}
 	
