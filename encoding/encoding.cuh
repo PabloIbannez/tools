@@ -39,9 +39,11 @@ class encoding3{
 	baseType base;
 	
 	//Masks for each value
-	static const baseType mask_st=((1<<st_l)-1)<<(nd_l+rd_l);
-	static const baseType mask_nd=((1<<nd_l)-1)<<(rd_l);
-	static const baseType mask_rd=((1<<rd_l)-1);
+	static const baseType mask_st=baseType((baseType(1)<<st_l)-1)<<(nd_l+rd_l);
+	static const baseType mask_nd=baseType((baseType(1)<<nd_l)-1)<<(rd_l);
+	static const baseType mask_rd=baseType((baseType(1)<<rd_l)-1);
+	
+	static const baseType mask_st_nd=baseType((baseType(1)<<(st_l+nd_l))-1)<<(rd_l);
     
     public:
     
@@ -74,9 +76,12 @@ class encoding3{
 	    }
 	}
 	
-	INLINE baseType get_st(){return base >> (nd_l+rd_l);}
-	INLINE baseType get_nd(){return (base & mask_nd) >> rd_l;}
-	INLINE baseType get_rd(){return (base & mask_rd);}
+	INLINE baseType get_base() const {return base;}
+	INLINE baseType get_st() const {return base >> (nd_l+rd_l);}
+	INLINE baseType get_nd() const {return (base & mask_nd) >> rd_l;}
+	INLINE baseType get_rd() const {return (base & mask_rd);}
+	
+	INLINE bool comp_st_nd(const encoding3<baseType,st_l,nd_l,rd_l> &j) const {return (base & mask_st_nd) == (j.get_base() & mask_st_nd);}
 };
 
 
