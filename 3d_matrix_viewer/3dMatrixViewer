@@ -1,0 +1,199 @@
+#!/usr/bin/env python
+
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.widgets
+
+class _3dMatrixViewer:
+    
+    #current visualization
+    axis = 0 #0:x 1:y 2:z
+    sliceNum = 0
+    
+    dim = 3*[None]
+    
+    def __init__(self,matrix1Path,matrix2Path):
+	
+		data = np.loadtxt(matrix1Path)
+		
+		dimX = int(data[data.shape[0]-1][0]+1)
+		dimY = int(data[data.shape[0]-1][1]+1)
+		dimZ = int(data[data.shape[0]-1][2]+1)
+		
+		data = np.loadtxt(matrix2Path)
+		
+		if(dimX != int(data[data.shape[0]-1][0]+1) or dimY != int(data[data.shape[0]-1][1]+1) or dimZ != int(data[data.shape[0]-1][2]+1)):
+			print "The sizes of the matrices are not equal"
+			print "Matrix 1",dimX,dimY,dimZ
+			print "Matrix 2",int(data[data.shape[0]-1][0]+1),int(data[data.shape[0]-1][1]+1),int(data[data.shape[0]-1][2]+1)
+			sys.exit()
+		
+		totalEleNum = dimX*dimY*dimZ
+		
+		self._3dMatrixData_1 = np.zeros((dimX,dimY,dimZ))
+		self._3dMatrixData_2 = np.zeros((dimX,dimY,dimZ))
+		
+		count = 0
+		with open(matrix1Path, "r") as m1File:
+			for line in m1File:
+				lineBuffer = np.fromstring(line, dtype=float, sep=' ')
+				self._3dMatrixData_1[int(lineBuffer[0]),int(lineBuffer[1]),int(lineBuffer[2])] = lineBuffer[3]
+				count += 1
+		
+		if(count < totalEleNum):
+			print "ERROR in __init__(matrix1Path,matrix2Path,dimX,dimY,dimZ), the number of entries in",matrix1Path, \
+					"is less than the specified number of elements: (",dimX,",",dimZ,",",dimZ,"). Total specified ",totalEleNum, \
+					",total given:",count
+			sys.exit()
+				
+		count = 0
+		with open(matrix2Path, "r") as m2File:
+			for line in m2File:
+				lineBuffer = np.fromstring(line, dtype=float, sep=' ')
+				self._3dMatrixData_2[int(lineBuffer[0]),int(lineBuffer[1]),int(lineBuffer[2])] = lineBuffer[3]
+				count += 1
+		
+		if(count < totalEleNum):
+			print "ERROR in __init__(matrix1Path,matrix2Path,dimX,dimY,dimZ), the number of entries in",matrix2Path, \
+					"is less than the specified number of elements: (",dimX,",",dimZ,",",dimZ,"). Total specified ",totalEleNum, \
+					",total given:",count
+			sys.exit()
+		
+		self.dim[0] = dimX
+		self.dim[1] = dimY
+		self.dim[2] = dimZ
+		
+		self._2dSlice_1 = self._3dMatrixData_1[0,:,:]
+		self._2dSlice_2 = self._3dMatrixData_2[0,:,:]
+		print self._3dMatrixData_1.max(),self._3dMatrixData_2.max()
+		print self._3dMatrixData_1.min(),self._3dMatrixData_2.min()
+		self.drawMatricesPair()
+    
+    def printMemInfo(self):
+        print sys.getsizeof(self._3dMatrixData_1)/1024/1024+sys.getsizeof(self._3dMatrixData_2)/1024/1024,"Mb"
+
+    def setSliceToVis(self,axis,sliceNum):
+        
+        if(axis == 0):
+            if(int(sliceNum) < 0 or int(sliceNum) > self._3dMatrixData_1.shape[axis]-1):
+                print "ERROR in setSliceToVis(axis,sliceNum), scliceNum has to be a number in the interval [0,",self._3dMatrixData_1.shape[axis],"]"
+                return
+            self._2dSlice_1 = self._3dMatrixData_1[sliceNum,:,:]
+            self._2dSlice_2 = self._3dMatrixData_2[sliceNum,:,:]
+            
+        elif(axis == 1):
+            if(int(sliceNum) < 0 or int(sliceNum) > self._3dMatrixData_1.shape[axis]-1):
+                print "ERROR in setSliceToVis(axis,sliceNum), scliceNum has to be a number in the interval [0,",self._3dMatrixData_1.shape[axis],"]"
+                return
+            self._2dSlice_1 = self._3dMatrixData_1[:,sliceNum,:]
+            self._2dSlice_2 = self._3dMatrixData_2[:,sliceNum,:]
+            
+        elif(axis == 2):
+            if(int(sliceNum) < 0 or int(sliceNum) > self._3dMatrixData_1.shape[axis]-1):
+                print "ERROR in setSliceToVis(axis,sliceNum), scliceNum has to be a number in the interval [0,",self._3dMatrixData_1.shape[axis],"]"
+                return
+            self._2dSlice_1 = self._3dMatrixData_1[:,:,sliceNum]
+            self._2dSlice_2 = self._3dMatrixData_2[:,:,sliceNum]
+            
+        else:
+            print "ERROR in setSliceToVis(axis,sliceNum), axis has to be: 0:x 1:y 2:z."
+            return
+        
+        self.axis = axis
+        self.sliceNum = sliceNum
+        return
+        
+        
+    def drawMatricesPair(self):
+        
+        plt.figure(1)
+        
+        axcolor = 'lightgoldenrodyellow'
+	actcolor = 'orange'
+	
+        rBax = plt.axes([0.03, 0.48, 0.06, 0.09], facecolor=axcolor)
+        rB = matplotlib.widgets.RadioButtons(rBax, ('X', 'Y', 'Z'))
+	rB.set_active(self.axis)
+        
+        def rBhandler(label):
+	    dimDict = {'X': 0, 'Y': 1, 'Z': 2}
+            self.setSliceToVis(dimDict[label],0)
+	    plt.clf()
+	    self.drawMatricesPair()
+            
+        rB.on_clicked(rBhandler)
+	
+	################################################################
+	
+	axbox = plt.axes([0.5, 0.9, 0.05, 0.05],facecolor=axcolor)
+	text_box = matplotlib.widgets.TextBox(axbox, 'Slice Number (Max:'+str(self.dim[self.axis]-1)+')  ', initial=str(self.sliceNum))
+	
+	def text_boxHandler(inputSlice):
+	    if int(inputSlice) >= self.dim[self.axis]:
+		self.setSliceToVis(self.axis,self.dim[self.axis]-1)
+		text_box.set_val(self.dim[self.axis]-1)
+		m1.set_data(self._2dSlice_1)
+		m2.set_data(self._2dSlice_2)
+		plt.draw()
+	    elif int(inputSlice) < 0:
+		self.setSliceToVis(self.axis,0)
+		text_box.set_val(0)
+		m1.set_data(self._2dSlice_1)
+		m2.set_data(self._2dSlice_2)
+		plt.draw()
+	    else:
+		self.setSliceToVis(self.axis,int(inputSlice))
+		text_box.set_val(int(inputSlice))
+		m1.set_data(self._2dSlice_1)
+		m2.set_data(self._2dSlice_2)
+		plt.draw()
+	
+	text_box.on_submit(text_boxHandler)
+	
+	##################################################################
+	
+        bax = plt.axes([0.05, 0.05, 0.5, 0.03], facecolor=axcolor)
+        fax = plt.axes([0.5, 0.05, 0.45, 0.03], facecolor=axcolor)
+	
+        button_back = matplotlib.widgets.Button(bax, label=ur'$\u25C0$', 
+                        color=axcolor, hovercolor=actcolor)
+        button_forward = matplotlib.widgets.Button(fax, label=ur'$\u25B6$', 
+                        color=axcolor, hovercolor=actcolor)
+	
+	def forward(event):
+	    i = self.sliceNum+1
+	    if (i < 0) or (i >= self.dim[self.axis]):
+		return
+	    text_box.set_val(i)
+	    self.setSliceToVis(self.axis,i)
+	    m1.set_data(self._2dSlice_1)
+	    m2.set_data(self._2dSlice_2)
+	    plt.draw()
+
+	def backward(event):
+	    i = self.sliceNum-1
+	    if (i < 0) or (i >= self.dim[self.axis]):
+		return
+	    text_box.set_val(i)
+	    self.setSliceToVis(self.axis,i)
+	    m1.set_data(self._2dSlice_1)
+	    m2.set_data(self._2dSlice_2)
+	    plt.draw()
+	
+	button_back.on_clicked(backward)
+	button_forward.on_clicked(forward)
+		
+	plt.subplot(121)
+	m1 = plt.imshow(self._2dSlice_1,vmin=-20,vmax=20,cmap='gnuplot')
+	#m1 = plt.imshow(self._2dSlice_1,cmap='gnuplot')
+	plt.colorbar()
+	plt.subplot(122)
+	m2 = plt.imshow(self._2dSlice_2,vmin=-20,vmax=20,cmap='gnuplot')
+	#m2 = plt.imshow(self._2dSlice_2,cmap='gnuplot')
+	plt.colorbar()
+	
+	plt.show()
+
+if __name__ == "__main__":
+    _3dMatrixViewer(sys.argv[1],sys.argv[2])
